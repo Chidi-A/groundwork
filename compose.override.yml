@@ -1,5 +1,4 @@
 services:
-
   # Local services are available on their ports, but also available on:
   # http://api.localhost.tiangolo.com: backend
   # http://dashboard.localhost.tiangolo.com: frontend
@@ -10,8 +9,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "80:80"
-      - "8090:8080"
+      - '80:80'
+      - '8090:8080'
     # Duplicate the command from compose.yml to add --api.insecure=true
     command:
       # Enable Docker in Traefik, so that it reads labels from Docker services
@@ -46,19 +45,19 @@ services:
       - default
 
   db:
-    restart: "no"
+    restart: 'no'
     ports:
-      - "5432:5432"
+      - '5432:5432'
 
   adminer:
-    restart: "no"
+    restart: 'no'
     ports:
-      - "8080:8080"
+      - '8080:8080'
 
   backend:
-    restart: "no"
+    restart: 'no'
     ports:
-      - "8000:8000"
+      - '8000:8000'
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -67,7 +66,7 @@ services:
       - fastapi
       - run
       - --reload
-      - "app/main.py"
+      - 'app/main.py'
     develop:
       watch:
         - path: ./backend
@@ -82,21 +81,44 @@ services:
     volumes:
       - ./backend/htmlcov:/app/backend/htmlcov
     environment:
-      SMTP_HOST: "mailcatcher"
-      SMTP_PORT: "1025"
-      SMTP_TLS: "false"
-      EMAILS_FROM_EMAIL: "noreply@example.com"
+      SMTP_HOST: 'mailcatcher'
+      SMTP_PORT: '1025'
+      SMTP_TLS: 'false'
+      EMAILS_FROM_EMAIL: 'noreply@example.com'
 
   mailcatcher:
     image: schickling/mailcatcher
     ports:
-      - "1080:1080"
-      - "1025:1025"
+      - '1080:1080'
+      - '1025:1025'
+
+  minio:
+    image: minio/minio:latest
+    restart: 'no'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin123}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${S3_ACCESS_KEY_ID:-minioadmin} ${S3_SECRET_ACCESS_KEY:-minioadmin123}; do sleep 1; done;
+      mc mb --ignore-existing local/${S3_BUCKET:-groundwork-documents};
+      "
 
   frontend:
-    restart: "no"
+    restart: 'no'
     ports:
-      - "5173:80"
+      - '5173:80'
     build:
       context: .
       dockerfile: frontend/Dockerfile
@@ -133,3 +155,6 @@ networks:
   traefik-public:
     # For local dev, don't expect an external Traefik network
     external: false
+
+volumes:
+  minio-data:

@@ -30,6 +30,13 @@ class Settings(BaseSettings):
         extra="ignore",
     )
     API_V1_STR: str = "/api/v1"
+    MAX_UPLOAD_SIZE_MB: int = 25
+    S3_ENDPOINT_URL: str = "http://minio:9000"
+    S3_PUBLIC_ENDPOINT_URL: str | None = None
+    S3_ACCESS_KEY_ID: str = "minioadmin"
+    S3_SECRET_ACCESS_KEY: str = "minioadmin123"
+    S3_BUCKET: str = "groundwork-documents"
+    S3_REGION: str = "auto"
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
@@ -39,6 +46,11 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)
     ] = []
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def s3_public_endpoint_url(self) -> str:
+        return self.S3_PUBLIC_ENDPOINT_URL or self.S3_ENDPOINT_URL
 
     @computed_field  # type: ignore[prop-decorator]
     @property

@@ -1,0 +1,127 @@
+/* ── Colors ─────────────────────────────────────────── */
+:root {
+  --bg-page: oklch(99% 0.002 90);
+  --bg-sidebar: oklch(98% 0.003 90);
+  --bg-surface: #ffffff;
+  --bg-surface-muted: oklch(96% 0.006 90);
+  --bg-surface-muted-alt: oklch(95% 0.015 150);
+
+  --border-default: oklch(94% 0.006 90);
+  --border-subtle: oklch(95% 0.005 90);
+
+  --text-heading: oklch(24% 0.02 150);
+  --text-body: oklch(32% 0.02 150);
+  --text-secondary: oklch(52% 0.02 150);
+  --text-muted: oklch(56% 0.02 150);
+  --text-faint: oklch(58% 0.02 150);
+
+  --accent-50: oklch(97% 0.01 20);
+  --accent-100: oklch(93% 0.03 20);
+  --accent-200: oklch(90% 0.035 20);
+  --accent-500: oklch(38% 0.12 18);
+  --accent-600: oklch(35% 0.12 18);
+  --accent-700: oklch(30% 0.12 18);
+
+  /* Taxonomy — insight type */
+  --pain-bg: oklch(93% 0.05 22);
+  --pain-fg: oklch(45% 0.15 22);
+  --pain-dot: oklch(58% 0.19 22);
+  --feature-bg: oklch(93% 0.04 250);
+  --feature-fg: oklch(45% 0.12 250);
+  --feature-dot: oklch(56% 0.14 250);
+  --opportunity-bg: oklch(93% 0.04 140);
+  --opportunity-fg: oklch(42% 0.1 140);
+  --opportunity-dot: oklch(62% 0.15 140);
+  --quote-bg: oklch(93% 0.04 305);
+  --quote-fg: oklch(45% 0.11 305);
+  --quote-dot: oklch(54% 0.15 305);
+  --jtbd-bg: oklch(93% 0.04 340);
+  --jtbd-fg: oklch(45% 0.12 340);
+  --jtbd-dot: oklch(56% 0.14 340);
+
+  /* System / pipeline status */
+  --status-completed-bg: oklch(92% 0.04 195);
+  --status-completed-fg: oklch(42% 0.1 195);
+  --status-processing-bg: oklch(93% 0.04 285);
+  --status-processing-fg: oklch(50% 0.1 285);
+  --status-queued-bg: oklch(95% 0.006 90);
+  --status-queued-fg: oklch(50% 0.01 90);
+  --status-failed-bg: oklch(94% 0.04 25);
+  --status-failed-fg: oklch(50% 0.18 25);
+  --status-completed-no-insights-bg: oklch(93% 0.05 65);
+  --status-completed-no-insights-fg: oklch(46% 0.09 65);
+
+  /* Review workflow status */
+  --review-needs-review-bg: oklch(93% 0.05 65);
+  --review-needs-review-fg: oklch(42% 0.1 65);
+  --review-unreviewed-bg: oklch(95% 0.006 90);
+  --review-unreviewed-fg: oklch(50% 0.01 90);
+  --review-confirmed-bg: oklch(92% 0.04 175);
+  --review-confirmed-fg: oklch(40% 0.1 175);
+  --review-edited-bg: oklch(93% 0.05 88);
+  --review-edited-fg: oklch(45% 0.1 88);
+  --review-rejected-bg: oklch(93% 0.01 55);
+  --review-rejected-fg: oklch(42% 0.025 55);
+  --review-flagged-bg: oklch(97% 0.02 350);
+  --review-flagged-fg: oklch(46% 0.15 350);
+}
+
+/* ── Typography ──────────────────────────────────────── */
+:root {
+  --font-family-heading: 'Quicksand', sans-serif;
+  --font-family-body: 'Karla', sans-serif;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 15px;
+  --text-xl: 17px;
+  --text-2xl: 21px;
+  --text-3xl: 24px;
+  --text-4xl: 26px;
+  --text-5xl: 30px;
+}
+
+/* ── Radii ───────────────────────────────────────────── */
+:root {
+  --ds-radius-sm: 8px;
+  --ds-radius-md: 11px;
+  --ds-radius-lg: 14px;
+  --ds-radius-xl: 16px;
+  --ds-radius-2xl: 18px;
+  --ds-radius-3xl: 20px;
+  --ds-radius-4xl: 24px;
+  --ds-radius-pill: 999px;
+}
+
+/* ── Shadows ─────────────────────────────────────────── */
+:root {
+  --shadow-card: 0 2px 10px oklch(50% 0.05 150 / 0.06);
+  --shadow-raised: 0 2px 8px oklch(50% 0.05 150 / 0.08);
+  --shadow-popover: 0 20px 50px -12px oklch(30% 0.05 150 / 0.3);
+  --shadow-modal: 0 30px 60px -20px oklch(30% 0.05 150 / 0.35);
+  --shadow-accent-glow: 0 4px 12px oklch(52% 0.1 165 / 0.3);
+}
+
+/* ── Spacing ──────────────────────────────────────────── */
+:root {
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 14px;
+  --space-7: 16px;
+  --space-8: 18px;
+  --space-9: 20px;
+  --space-10: 22px;
+  --space-12: 26px;
+  --space-14: 34px;
+}

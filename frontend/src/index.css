@@ -1,5 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import './tokens.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -39,6 +40,102 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@theme inline {
+  /* Backgrounds → bg-bg-page, bg-bg-sidebar, etc. */
+  --color-bg-page: var(--bg-page);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-muted: var(--bg-surface-muted);
+  --color-bg-muted-alt: var(--bg-surface-muted-alt);
+
+  /* Borders */
+  --color-border-default: var(--border-default);
+  --color-border-subtle: var(--border-subtle);
+
+  /* Text → text-text-heading, text-text-body, etc. */
+  --color-text-heading: var(--text-heading);
+  --color-text-body: var(--text-body);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+
+  /* Accent → bg-accent-500, text-accent-500, etc. */
+  --color-accent-50: var(--accent-50);
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+
+  /* Taxonomy */
+  --color-pain-bg: var(--pain-bg);
+  --color-pain-fg: var(--pain-fg);
+  --color-pain-dot: var(--pain-dot);
+  --color-feature-bg: var(--feature-bg);
+  --color-feature-fg: var(--feature-fg);
+  --color-feature-dot: var(--feature-dot);
+  --color-opportunity-bg: var(--opportunity-bg);
+  --color-opportunity-fg: var(--opportunity-fg);
+  --color-opportunity-dot: var(--opportunity-dot);
+  --color-quote-bg: var(--quote-bg);
+  --color-quote-fg: var(--quote-fg);
+  --color-quote-dot: var(--quote-dot);
+  --color-jtbd-bg: var(--jtbd-bg);
+  --color-jtbd-fg: var(--jtbd-fg);
+  --color-jtbd-dot: var(--jtbd-dot);
+
+  /* System status */
+  --color-status-completed-bg: var(--status-completed-bg);
+  --color-status-completed-fg: var(--status-completed-fg);
+  --color-status-completed-no-insights-bg: var(
+    --status-completed-no-insights-bg
+  );
+  --color-status-completed-no-insights-fg: var(
+    --status-completed-no-insights-fg
+  );
+  --color-status-processing-bg: var(--status-processing-bg);
+  --color-status-processing-fg: var(--status-processing-fg);
+  --color-status-queued-bg: var(--status-queued-bg);
+  --color-status-queued-fg: var(--status-queued-fg);
+  --color-status-failed-bg: var(--status-failed-bg);
+  --color-status-failed-fg: var(--status-failed-fg);
+
+  /* Review status */
+  --color-review-needs-review-bg: var(--review-needs-review-bg);
+  --color-review-needs-review-fg: var(--review-needs-review-fg);
+  --color-review-unreviewed-bg: var(--review-unreviewed-bg);
+  --color-review-unreviewed-fg: var(--review-unreviewed-fg);
+  --color-review-confirmed-bg: var(--review-confirmed-bg);
+  --color-review-confirmed-fg: var(--review-confirmed-fg);
+  --color-review-edited-bg: var(--review-edited-bg);
+  --color-review-edited-fg: var(--review-edited-fg);
+  --color-review-rejected-bg: var(--review-rejected-bg);
+  --color-review-rejected-fg: var(--review-rejected-fg);
+  --color-review-flagged-bg: var(--review-flagged-bg);
+  --color-review-flagged-fg: var(--review-flagged-fg);
+
+  /* Font families → font-heading, font-body */
+  --font-heading: var(--font-family-heading);
+  --font-body: var(--font-family-body);
+
+  /* Radii → rounded-ds-sm, rounded-ds-md, etc. */
+  --radius-ds-sm: var(--ds-radius-sm);
+  --radius-ds-md: var(--ds-radius-md);
+  --radius-ds-lg: var(--ds-radius-lg);
+  --radius-ds-xl: var(--ds-radius-xl);
+  --radius-ds-2xl: var(--ds-radius-2xl);
+  --radius-ds-3xl: var(--ds-radius-3xl);
+  --radius-ds-4xl: var(--ds-radius-4xl);
+  --radius-ds-pill: var(--ds-radius-pill);
+
+  /* Shadows → shadow-card, shadow-raised, etc. */
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-popover: var(--shadow-popover);
+  --shadow-modal: var(--shadow-modal);
+  --shadow-accent-glow: var(--shadow-accent-glow);
 }
 
 :root {
@@ -118,7 +215,7 @@
     @apply bg-background text-foreground;
   }
   button,
-  [role="button"] {
+  [role='button'] {
     cursor: pointer;
   }
 }
