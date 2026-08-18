@@ -66,7 +66,12 @@ def read_insights(
     """
     List insights, optionally scoped to a project and filtered by type,
     theme, sentiment, participant, or review status. Rejected insights
-    are omitted unless review_status is set explicitly.
+    are omitted unless review_status is set explicitly or include_rejected
+    is set.
+
+    needs_review is a permanent extraction-time flag and is not cleared by
+    edits/confirms/rejects; combine with review_status=unreviewed to get the
+    actionable "still needs a human look" queue rather than the full history.
     """
     statement = (
         select(Insight)
@@ -196,6 +201,8 @@ def update_insight(
             )
 
     insight.sqlmodel_update(update_dict)
+    # NOTE: any edit reactivates a rejected insight — intentional for v1,
+    # revisit if bulk-edit or an AI re-classification pass is ever added.
     insight.review_status = ReviewStatus.edited
     insight.rejection_reason = None
 

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import enum
 import uuid
@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from pydantic import EmailStr
 from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy.dialects.postgresql import TSVECTOR
 
 
 def get_datetime_utc() -> datetime:
@@ -124,6 +125,13 @@ class Document(DocumentBase, table=True):
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),
     )
+    search_vector: Any = Field(
+        default=None,
+        sa_column=sa.Column(
+            TSVECTOR,
+            sa.Computed("to_tsvector('english', coalesce(filename, ''))", persisted=True),
+        )
+    )
     project: Optional["Project"] = Relationship(back_populates="documents")
     uploaded_by: Optional["User"] = Relationship()
     participants: list["Participant"] = Relationship(back_populates="document", cascade_delete=True)
@@ -202,6 +210,19 @@ class Insight(InsightBase, table=True):
             nullable=False,
         ),
     )
+    search_vector: Any = Field(
+        default=None,
+        sa_column=sa.Column(
+            TSVECTOR,
+            sa.Computed(
+                "to_tsvector('english', "
+                "coalesce(text, '') || ' ' || "
+                "coalesce(source_quote, '') || ' ' || "
+                "coalesce(theme, ''))",
+                persisted=True,
+            ),
+        )
+    )
     project: Optional["Project"] = Relationship(back_populates="insights")
     document: Optional["Document"] = Relationship(back_populates="insights")
     participant: Optional["Participant"] = Relationship(back_populates="insights")
@@ -226,6 +247,17 @@ class InsightPublic(InsightBase):
 class InsightsPublic(SQLModel):
     data: list[InsightPublic]
     count: int
+
+
+class PassagePublic(SQLModel):
+    document_id: uuid.UUID
+    filename: str
+    snippet: str
+
+
+class SearchResults(SQLModel):
+    insights: list[InsightPublic]
+    passages: list[PassagePublic]
 
 
 class InsightReviewAction(str, enum.Enum):
