@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     S3_SECRET_ACCESS_KEY: str = "minioadmin123"
     S3_BUCKET: str = "groundwork-documents"
     S3_REGION: str = "auto"
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_CHAT_MODEL: str = "claude-sonnet-4-20250514"
+    CHAT_CONTEXT_MAX_INSIGHTS: int = 50
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8

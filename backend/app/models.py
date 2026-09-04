@@ -295,6 +295,20 @@ class ChatMessage(SQLModel, table=True):
     project: Optional["Project"] = Relationship(back_populates="messages")
 
 
+class ChatMessagePublic(SQLModel):
+    id: uuid.UUID
+    project_id: uuid.UUID | None
+    role: ChatRole
+    content: str
+    cited_insight_ids: list[str] | None
+    created_at: datetime
+
+
+class ChatRequest(SQLModel):
+    project_id: uuid.UUID
+    message: str = Field(min_length=1)
+    
+
 class Report(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     project_id: uuid.UUID = Field(foreign_key="project.id", nullable=False, ondelete="CASCADE", index=True)
