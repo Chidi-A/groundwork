@@ -322,6 +322,18 @@ class Report(SQLModel, table=True):
     )
     project: Optional["Project"] = Relationship(back_populates="reports")
 
+class ReportCreate(SQLModel):
+    project_id: uuid.UUID
+
+
+class ReportPublic(SQLModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    status: ReportStatus
+    markdown_content: str | None
+    insight_count_at_generation: int | None
+    reviewed_count_at_generation: int | None
+    created_at: datetime
 
 # Shared properties
 class UserBase(SQLModel):

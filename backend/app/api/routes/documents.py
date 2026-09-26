@@ -3,10 +3,9 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
-from sqlalchemy import or_
 from sqlmodel import col, func, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, OwnedDocument, SessionDep, get_owned_project, visible_to_user
 from app.core import storage
 from app.core.config import settings
 from app.models import (
@@ -31,30 +30,6 @@ EXTENSION_TO_FORMAT: dict[str, DocumentFormat] = {
 MAX_UPLOAD_SIZE_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 
-def _get_owned_project(
-    session: SessionDep, current_user: CurrentUser, project_id: uuid.UUID
-) -> Project:
-    project = session.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    if not current_user.is_superuser and project.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    return project
-
-
-def _authorize_document(
-    session: SessionDep, current_user: CurrentUser, document: Document
-) -> None:
-    if current_user.is_superuser:
-        return
-    if document.project_id is not None:
-        project = session.get(Project, document.project_id)
-        if project is None or project.owner_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Not enough permissions")
-    elif document.uploaded_by_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-
-
 @router.post("/", response_model=DocumentPublic)
 def upload_document(
     *,
@@ -70,7 +45,7 @@ def upload_document(
     """
 
     if project_id is not None:
-        _get_owned_project(session, current_user, project_id)
+        get_owned_project(session, current_user, project_id)
     extension = (file.filename or "").rsplit(".", 1)[-1].lower()
     doc_format = EXTENSION_TO_FORMAT.get(extension)
     if doc_format is None:
@@ -133,11 +108,8 @@ def read_documents(
         .outerjoin(Project, col(Document.project_id) == col(Project.id))
     )
 
-    if not current_user.is_superuser:
-        ownership_filter = or_(
-            col(Project.owner_id) == current_user.id,
-            col(Document.uploaded_by_id) == current_user.id,
-        )
+    ownership_filter = visible_to_user(current_user)
+    if ownership_filter is not None:
         statement = statement.where(ownership_filter)
         count_statement = count_statement.where(ownership_filter)
     if project_id is not None:
@@ -159,29 +131,19 @@ def read_documents(
 
 
 @router.get("/{id}", response_model=DocumentPublic)
-def read_document(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+def read_document(document: OwnedDocument) -> Any:
     """
     Get a document by ID (used to poll a single upload's progress).
     """
-    document = session.get(Document, id)
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    _authorize_document(session, current_user, document)
     return document
 
 
 @router.get("/{id}/download-url")
-def get_document_download_url(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
-) -> dict[str, str]:
+def get_document_download_url(document: OwnedDocument) -> dict[str, str]:
     """
     Return a short-lived presigned URL for downloading the original file
     directly from object storage (never proxied through this API).
     """
-    document = session.get(Document, id)
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    _authorize_document(session, current_user, document)
     if not document.storage_key:
         raise HTTPException(status_code=409, detail="Document has no stored file")
 
@@ -194,18 +156,14 @@ def organize_document(
     *,
     session: SessionDep,
     current_user: CurrentUser,
-    id: uuid.UUID,
+    document: OwnedDocument,
     body: DocumentOrganize,
 ) -> Any:
     """
     Attach a document to a project, retroactively stamping project_id onto
     every insight already extracted from it while it sat in the inbox.
     """
-    document = session.get(Document, id)
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    _authorize_document(session, current_user, document)
-    _get_owned_project(session, current_user, body.project_id)
+    get_owned_project(session, current_user, body.project_id)
 
     if document.project_id is not None and document.project_id != body.project_id:
         raise HTTPException(
@@ -216,7 +174,9 @@ def organize_document(
     document.project_id = body.project_id
     session.add(document)
 
-    insights = session.exec(select(Insight).where(Insight.document_id == id)).all()
+    insights = session.exec(
+        select(Insight).where(Insight.document_id == document.id)
+    ).all()
     for insight in insights:
         insight.project_id = body.project_id
         session.add(insight)
@@ -227,19 +187,12 @@ def organize_document(
 
 
 @router.delete("/{id}")
-def delete_document(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
-) -> Message:
+def delete_document(session: SessionDep, document: OwnedDocument) -> Message:
     """
     Delete a document, its stored file, and every insight extracted from it.
     Participants cascade-delete with the document; insights cascade via
     Insight.document_id.
     """
-    document = session.get(Document, id)
-    if not document:
-        raise HTTPException(status_code=404, detail="Document not found")
-    _authorize_document(session, current_user, document)
-
     if document.storage_key:
         storage.delete_document(document.storage_key)
 

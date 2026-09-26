@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 from sqlmodel import col, func, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, get_owned_project
 from app.core.config import settings
 from app.core.llm import get_client
 from app.models import (
@@ -15,7 +15,6 @@ from app.models import (
     ChatRequest,
     ChatRole,
     Insight,
-    Project,
     ReviewStatus,
 )
 
@@ -40,18 +39,6 @@ CITE_INSIGHTS_TOOL: dict[str, Any] = {
         "required": ["insight_ids"],
     },
 }
-
-
-def _get_owned_project(
-    session: SessionDep, current_user: CurrentUser, project_id: uuid.UUID
-) -> Project:
-    project = session.get(Project, project_id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    if not current_user.is_superuser and project.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-    return project
-
 
 
 def _build_insight_context(
@@ -121,7 +108,12 @@ def _extract_cited_ids(final_message: Any, valid_ids: set[str]) -> list[str]:
             continue
         tool_input = block.input
         if isinstance(tool_input, str):
-            tool_input = json.loads(tool_input)
+            try:
+                tool_input = json.loads(tool_input)
+            except json.JSONDecodeError:
+                continue
+        if not isinstance(tool_input, dict):
+            continue
         raw_ids = tool_input.get("insight_ids", [])
         if not isinstance(raw_ids, list):
             continue
@@ -151,7 +143,7 @@ async def chat(
             status_code=500, detail="ANTHROPIC_API_KEY is not configured."
         )
 
-    project = _get_owned_project(session, current_user, body.project_id)
+    project = get_owned_project(session, current_user, body.project_id)
 
     session.add(ChatMessage(project_id=project.id, role=ChatRole.user, content=body.message))
     session.commit()
@@ -184,6 +176,12 @@ async def chat(
 
     cited_ids = _extract_cited_ids(final_message, valid_ids)
 
+    tool_was_called = any(
+        block.type == "tool_use" and block.name == "cite_insights"
+        for block in final_message.content
+    )
+    citations_missing = bool(full_text) and not tool_was_called
+
     session.add(
         ChatMessage(
             project_id=project.id,
@@ -195,5 +193,10 @@ async def chat(
     session.commit()
 
     yield ServerSentEvent(
-        data={"content": full_text, "cited_insight_ids": cited_ids}, event="done"
+        data={
+            "content": full_text,
+            "cited_insight_ids": cited_ids,
+            "citations_missing": citations_missing,
+        },
+        event="done",
     )

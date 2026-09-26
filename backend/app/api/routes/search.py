@@ -2,10 +2,10 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Query
-from sqlalchemy import func, or_
+from sqlalchemy import func
 from sqlmodel import col, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, SessionDep, visible_to_user
 from app.models import (
     Document,
     Insight,
@@ -48,13 +48,9 @@ def search(
         .outerjoin(Document, col(Insight.document_id) == col(Document.id))
         .where(col(Insight.search_vector).op("@@")(tsquery))
     )
-    if not current_user.is_superuser:
-        insight_statement = insight_statement.where(
-            or_(
-                col(Project.owner_id) == current_user.id,
-                col(Document.uploaded_by_id) == current_user.id,
-            )
-        )
+    ownership_filter = visible_to_user(current_user)
+    if ownership_filter is not None:
+        insight_statement = insight_statement.where(ownership_filter)
     if project_id is not None:
         insight_statement = insight_statement.where(Insight.project_id == project_id)
     insight_statement = insight_statement.order_by(
@@ -67,13 +63,8 @@ def search(
         .outerjoin(Project, col(Document.project_id) == col(Project.id))
         .where(col(Document.search_vector).op("@@")(tsquery))
     )
-    if not current_user.is_superuser:
-        document_statement = document_statement.where(
-            or_(
-                col(Project.owner_id) == current_user.id,
-                col(Document.uploaded_by_id) == current_user.id,
-            )
-        )
+    if ownership_filter is not None:
+        document_statement = document_statement.where(ownership_filter)
     if project_id is not None:
         document_statement = document_statement.where(Document.project_id == project_id)
     document_statement = document_statement.order_by(

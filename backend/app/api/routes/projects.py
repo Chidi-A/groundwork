@@ -1,11 +1,10 @@
-import uuid
 from typing import Any
 from enum import Enum
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from sqlmodel import col, func, select
 
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, OwnedProject, SessionDep
 from app.core import storage
 from app.models import (
     Document,
@@ -60,15 +59,10 @@ def read_projects(
 
 
 @router.get("/{id}", response_model=ProjectPublic)
-def read_project(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+def read_project(project: OwnedProject) -> Any:
     """
     Get project by ID.
     """
-    project = session.get(Project, id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    if not current_user.is_superuser and (project.owner_id != current_user.id):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
     return project
 
 
@@ -90,18 +84,12 @@ def create_project(
 def update_project(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
+    project: OwnedProject,
     project_in: ProjectUpdate,
 ) -> Any:
     """
     Rename a project.
     """
-    project = session.get(Project, id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    if not current_user.is_superuser and (project.owner_id != current_user.id):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
     update_dict = project_in.model_dump(exclude_unset=True)
     project.sqlmodel_update(update_dict)
     session.add(project)
@@ -111,22 +99,16 @@ def update_project(
 
 
 @router.delete("/{id}")
-def delete_project(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
-) -> Message:
+def delete_project(session: SessionDep, project: OwnedProject) -> Message:
     """
     Delete a project. Documents, insights, chat messages, and reports
     cascade-delete via the relationships defined on Project; document files
     in object storage are cleaned up here first, since the DB cascade has
     no way to reach into the storage backend on its own.
     """
-    project = session.get(Project, id)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    if not current_user.is_superuser and (project.owner_id != current_user.id):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
-
-    documents = session.exec(select(Document).where(Document.project_id == id)).all()
+    documents = session.exec(
+        select(Document).where(Document.project_id == project.id)
+    ).all()
     for document in documents:
         if document.storage_key:
             storage.delete_document(document.storage_key)

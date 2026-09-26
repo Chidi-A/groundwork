@@ -2,11 +2,9 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import or_
 from sqlmodel import col, func, select
 
-
-from app.api.deps import CurrentUser, SessionDep
+from app.api.deps import CurrentUser, OwnedInsight, SessionDep, visible_to_user
 from app.models import (
     Document,
     Insight,
@@ -23,29 +21,6 @@ from app.models import (
 )
 
 router = APIRouter(prefix="/insights", tags=["insights"])
-
-def _authorize_insight(
-    session: SessionDep, current_user: CurrentUser, insight: Insight
-) -> None:
-    if current_user.is_superuser:
-        return
-    if insight.project_id is not None:
-        project = session.get(Project, insight.project_id)
-        if project is None or project.owner_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Not enough permissions")
-        return
-    if insight.document_id is not None:
-        document = session.get(Document, insight.document_id)
-        if document is None:
-            raise HTTPException(status_code=403, detail="Not enough permissions")
-        if document.project_id is not None:
-            project = session.get(Project, document.project_id)
-            if project is None or project.owner_id != current_user.id:
-                raise HTTPException(status_code=403, detail="Not enough permissions")
-        elif document.uploaded_by_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Not enough permissions")
-        return
-    raise HTTPException(status_code=403, detail="Not enough permissions")
 
 
 @router.get("/", response_model=InsightsPublic)
@@ -84,11 +59,8 @@ def read_insights(
         .outerjoin(Project, col(Insight.project_id) == col(Project.id))
         .outerjoin(Document, col(Insight.document_id) == col(Document.id))
     )
-    if not current_user.is_superuser:
-        ownership_filter = or_(
-            col(Project.owner_id) == current_user.id,
-            col(Document.uploaded_by_id) == current_user.id,
-        )
+    ownership_filter = visible_to_user(current_user)
+    if ownership_filter is not None:
         statement = statement.where(ownership_filter)
         count_statement = count_statement.where(ownership_filter)
     if project_id is not None:
@@ -127,13 +99,7 @@ def read_insights(
 
 
 @router.get("/{id}", response_model=InsightPublic)
-def read_insight(
-    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
-) -> Any:
-    insight = session.get(Insight, id)
-    if not insight:
-        raise HTTPException(status_code=404, detail="Insight not found")
-    _authorize_insight(session, current_user, insight)
+def read_insight(insight: OwnedInsight) -> Any:
     return insight
 
 
@@ -141,18 +107,13 @@ def read_insight(
 def review_insight(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
+    insight: OwnedInsight,
     body: InsightReview,
 ) -> Any:
     """
     Confirm or reject an insight. Rejected rows are kept (soft-delete)
     and filtered out of the default list.
     """
-    insight = session.get(Insight, id)
-    if not insight:
-        raise HTTPException(status_code=404, detail="Insight not found")
-    _authorize_insight(session, current_user, insight)
     if body.action == InsightReviewAction.confirm:
         insight.review_status = ReviewStatus.confirmed
         insight.rejection_reason = None
@@ -174,8 +135,7 @@ def review_insight(
 def update_insight(
     *,
     session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
+    insight: OwnedInsight,
     body: InsightUpdate,
 ) -> Any:
     """
@@ -183,11 +143,6 @@ def update_insight(
     participant, etc.). Any field change marks the insight as edited and
     clears a prior rejection, since a human just corrected it.
     """
-    insight = session.get(Insight, id)
-    if not insight:
-        raise HTTPException(status_code=404, detail="Insight not found")
-    _authorize_insight(session, current_user, insight)
-
     update_dict = body.model_dump(exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No fields provided to update.")

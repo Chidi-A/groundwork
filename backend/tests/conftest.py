@@ -7,25 +7,36 @@ from sqlmodel import Session, delete
 from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
-from app.models import Item, User
+from app.models import (
+    ChatMessage,
+    Document,
+    Insight,
+    Participant,
+    Project,
+    Report,
+    User,
+)
 from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def db() -> Generator[Session]:
     with Session(engine) as session:
         init_db(session)
         yield session
-        statement = delete(Item)
-        session.execute(statement)
-        statement = delete(User)
-        session.execute(statement)
+        session.execute(delete(Insight))
+        session.execute(delete(ChatMessage))
+        session.execute(delete(Report))
+        session.execute(delete(Participant))
+        session.execute(delete(Document))
+        session.execute(delete(Project))
+        session.execute(delete(User))
         session.commit()
 
 
 @pytest.fixture(scope="module")
-def client() -> Generator[TestClient]:
+def client(_db: Session) -> Generator[TestClient]:
     with TestClient(app) as c:
         yield c
 
