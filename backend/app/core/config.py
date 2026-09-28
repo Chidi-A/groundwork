@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     S3_REGION: str = "auto"
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_CHAT_MODEL: str = "claude-sonnet-4-20250514"
+    ANTHROPIC_EXTRACTION_MODEL: str = "claude-sonnet-4-20250514"
+    OPENAI_API_KEY: str = ""
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    EMBEDDING_DIMENSIONS: int = 1536
+    CHUNK_SIZE: int = 2000
+    CHUNK_OVERLAP: int = 200
+    TYPE_CONFIDENCE_THRESHOLD: float = 0.6
+    MAX_THEME_LABELS: int = 30
     CHAT_CONTEXT_MAX_INSIGHTS: int = 50
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days

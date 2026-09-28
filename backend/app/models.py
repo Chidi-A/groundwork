@@ -9,6 +9,7 @@ from pydantic import EmailStr
 from sqlalchemy import DateTime
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy.dialects.postgresql import TSVECTOR
+from pgvector.sqlalchemy import Vector
 
 
 def get_datetime_utc() -> datetime:
@@ -222,6 +223,10 @@ class Insight(InsightBase, table=True):
                 persisted=True,
             ),
         )
+    )
+    embedding: Any = Field(
+    default=None,
+    sa_column=sa.Column(Vector(1536), nullable=True),
     )
     project: Optional["Project"] = Relationship(back_populates="insights")
     document: Optional["Document"] = Relationship(back_populates="insights")
